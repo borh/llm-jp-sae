@@ -204,8 +204,25 @@ def main():
     train_data_pth = os.path.join(usr_cfg.tokenized_data_dir, train_file_name)
     val_data_pth = os.path.join(usr_cfg.tokenized_data_dir, val_file_name)
 
-    dataset_train = CustomWikiDataset(train_data_pth)
-    dataset_val = CustomWikiDataset(val_data_pth)
+    # Use manifest-based datasets if available, fallback to old format
+    # Try to find manifest files with dataset names
+    import glob
+    manifest_pattern = os.path.join(usr_cfg.tokenized_data_dir, f"{args.label or ''}*_train_manifest.json")
+    train_manifests = glob.glob(manifest_pattern)
+    train_manifest = train_manifests[0] if train_manifests else None
+
+    manifest_pattern = os.path.join(usr_cfg.tokenized_data_dir, f"{args.label or ''}*_val_manifest.json")
+    val_manifests = glob.glob(manifest_pattern)
+    val_manifest = val_manifests[0] if val_manifests else None
+
+    if train_manifest and os.path.exists(train_manifest):
+        from dataset import StreamingShardedDataset
+        dataset_train = StreamingShardedDataset(train_manifest, cache_size=4)
+        dataset_val = StreamingShardedDataset(val_manifest, cache_size=2)
+    else:
+        dataset_train = CustomWikiDataset(train_data_pth)
+        dataset_val = CustomWikiDataset(val_data_pth)
+
     dl_train = DataLoader(
         dataset_train,
         batch_size=train_cfg.batch_size * train_cfg.inf_bs_expansion,

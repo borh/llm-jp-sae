@@ -53,7 +53,7 @@ class EvalConfig:
     act_threshold_p: float = 0.7
 
 
-def return_save_dir(root_dir, n_d, k, nl, ckpt, lr):
+def return_save_dir(root_dir, layer, n_d, k, nl, ckpt, lr):
     save_dir = root_dir
     save_dir += f"/n_d_{n_d}"
     save_dir += f"/k_{k}"
